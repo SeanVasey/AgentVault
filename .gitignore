@@ -1,0 +1,15 @@
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.idea/
+.vscode/
+
+# Local Claude Code state (keep shared agents/ and skills/, ignore local settings)
+.claude/settings.local.json
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
