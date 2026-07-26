@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1783680393679,
+      "tag": "0000_workable_marten_broadcloak",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1783682101076,
+      "tag": "0001_young_blink",
+      "breakpoints": true
+    }
+  ]
+}

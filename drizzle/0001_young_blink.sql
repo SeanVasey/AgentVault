@@ -1,0 +1,1 @@
+ALTER TABLE `artifacts` ADD `export_path` text DEFAULT '' NOT NULL;
