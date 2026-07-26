@@ -78,7 +78,7 @@ The theme preference is the only value stored in browser `localStorage`. Library
 
 The API expects a D1 binding named `DB`. Keep that binding name unless you also update `db/index.ts`, `worker/index.ts`, `vite.config.ts`, and `.openai/hosting.json` together.
 
-The `project_id` inside `.openai/hosting.json` identifies the current ChatGPT Sites project; it is not a secret. A different hosting project should replace this metadata through its own Sites or deployment workflow. Never add credentials to the repository or commit `.env` files.
+The `project_id` inside `.openai/hosting.json` is a placeholder; only the `d1` binding name is consumed by the code. A hosting project supplies its own metadata through its own Sites or deployment workflow. Never add credentials to the repository or commit `.env` files.
 
 The API does not partition records by user. Everyone permitted by the hosting access policy shares the same library, so preserve or strengthen the private hosting policy unless application-level authorization is added.
 
