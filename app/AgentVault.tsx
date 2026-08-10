@@ -1103,7 +1103,7 @@ export default function AgentVault({ initialArtifacts }: AgentVaultProps) {
               <section className="hero-grid">
                 <div className="hero-copy">
                   <p className="eyebrow"><Sparkles size={15} /> Agentic intelligence, organized</p>
-                  <h1>Build better<br /><span>agents.</span></h1>
+                  <h1><span className="hero-primary">Build better</span><br /><span className="hero-secondary">agents<span className="hero-period">.</span></span></h1>
                   <p className="hero-lede">Create, refine, validate, and package the Markdown that makes your AI workflows genuinely capable.</p>
                   <div className="hero-actions">
                     <button className="primary-button large" onClick={() => openNew("skill")}><WandSparkles size={18} /> Create a skill</button>
