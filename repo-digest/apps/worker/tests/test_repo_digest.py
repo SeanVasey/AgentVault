@@ -104,6 +104,13 @@ def test_find_slack_user_id() -> None:
     assert repo_digest.find_slack_user_id({"ok": True, "profile": {"id": "nope"}}) is None
 
 
+def test_resolve_own_slack_user_id_reads_text_profile_card() -> None:
+    text_card = {"result": "User ID: U0A7XN48C3C\nUsername: vaseymultimedia\nDisplay Name: Sean\n"}
+    assert repo_digest.resolve_own_slack_user_id(text_card) == "U0A7XN48C3C"
+    assert repo_digest.resolve_own_slack_user_id({"user": {"id": "U0A7XN48C3C"}}) == "U0A7XN48C3C"
+    assert repo_digest.resolve_own_slack_user_id({"result": "no id here"}) is None
+
+
 def test_render_digest_lists_both_sections_with_links() -> None:
     items = [
         repo_digest.DigestItem(
@@ -141,7 +148,9 @@ async def test_repo_digest_end_to_end(temporal_env: Any, monkeypatch: pytest.Mon
             assert args["owner"] == "octo" and args["repo"] == "hello"
             return {"content": [{"type": "text", "text": json.dumps(payload)}]}
         if tool_name == "slack_read_user_profile":
-            return {"ok": True, "user": {"id": "U0A7XN48C3C", "profile": {"real_name": "Sean"}}}
+            return {
+                "result": "User ID: U0A7XN48C3C\nUsername: vaseymultimedia\nDisplay Name: Sean\nReal Name: Sean Vasey\n"
+            }
         if tool_name == "slack_send_message":
             posted.update(args)
             return {"ok": True, "permalink": "https://example.slack.com/archives/D123/p1700000000.000001"}
@@ -149,7 +158,7 @@ async def test_repo_digest_end_to_end(temporal_env: Any, monkeypatch: pytest.Mon
 
     monkeypatch.setattr(ToolCallClient, "call_tool", fake_call_tool)
     fake_client = _fake_mistral_client([["SSO login flow", "Stabilized retry test"], ["Refactor of config loading"]])
-    monkeypatch.setattr(repo_digest, "get_mistral_client", lambda: fake_client)
+    monkeypatch.setattr(repo_digest, "get_mistral_client", lambda **_kwargs: fake_client)
 
     async with create_test_worker(
         temporal_env,
@@ -191,7 +200,7 @@ async def test_summarize_pull_requests_falls_back_to_titles_on_model_failure(
         raise RuntimeError("model unavailable")
 
     monkeypatch.setattr(
-        repo_digest, "get_mistral_client", lambda: SimpleNamespace(chat=SimpleNamespace(complete_async=boom))
+        repo_digest, "get_mistral_client", lambda **_kwargs: SimpleNamespace(chat=SimpleNamespace(complete_async=boom))
     )
     prs = [{"number": 7, "title": "Fix thing", "body": "", "url": "u", "author": "a"}]
     assert await repo_digest.summarize_pull_requests(prs) == ["Fix thing"]

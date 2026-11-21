@@ -16,6 +16,7 @@ import structlog
 from mistralai import workflows
 from mistralai.workflows import Depends
 from mistralai.workflows.client import get_mistral_client
+from mistralai.workflows.core.auth import RunAs
 from mistralai.workflows.plugins.mistralai.connectors import (
     ToolCallClient,
     connector,
@@ -44,6 +45,7 @@ PR_SEARCH_FIELDS = [
     "labels",
 ]
 _SLACK_USER_ID = re.compile(r"^U[0-9A-Z]{8,}$")
+_SLACK_USER_ID_TEXT = re.compile(r"User ID:\s*(U[0-9A-Z]{8,})")
 
 
 class RepoDigestInput(pydantic.BaseModel):
@@ -150,6 +152,16 @@ def find_slack_user_id(payload: Any) -> str | None:
     return None
 
 
+def resolve_own_slack_user_id(payload: Any) -> str | None:
+    """The Slack connector renders profiles as text cards; accept both shapes."""
+    structured = find_slack_user_id(payload)
+    if structured:
+        return structured
+    text = payload if isinstance(payload, str) else json.dumps(payload)
+    match = _SLACK_USER_ID_TEXT.search(text)
+    return match.group(1) if match else None
+
+
 def _md_escape(text: str) -> str:
     return text.replace("[", "\\[").replace("]", "\\]").replace("\n", " ").strip()
 
@@ -221,7 +233,7 @@ async def summarize_pull_requests(prs: list[dict[str, Any]]) -> list[str]:
     if not prs:
         return []
     try:
-        client = get_mistral_client()
+        client = get_mistral_client(run_as=RunAs.DEPLOYMENT)
         entries = [
             {"index": i, "number": pr["number"], "title": pr["title"], "body": pr["body"]} for i, pr in enumerate(prs)
         ]
@@ -258,9 +270,12 @@ async def post_slack_self_dm(
     slack: ToolCallClient = Depends(slack_connector),  # noqa: B008 - SDK DI pattern
 ) -> str:
     me = extract_payload(
-        await slack.call_tool(tool_name="slack_read_user_profile", arguments={"response_format": "concise"})
+        await slack.call_tool(
+            tool_name="slack_read_user_profile",
+            arguments={"response_format": "detailed", "include_locale": True},
+        )
     )
-    user_id = find_slack_user_id(me)
+    user_id = resolve_own_slack_user_id(me)
     if not user_id:
         raise ValueError("could not resolve the current Slack user id for the self-DM")
     result = extract_payload(
