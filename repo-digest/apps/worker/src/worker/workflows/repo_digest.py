@@ -46,7 +46,7 @@ PR_SEARCH_FIELDS = [
 ]
 _SLACK_USER_ID = re.compile(r"^U[0-9A-Z]{8,}$")
 _SLACK_USER_ID_TEXT = re.compile(r"User ID:\s*(U[0-9A-Z]{8,})")
-_SLACK_PERMALINK = re.compile(r"https://[^\s]*slack\.com/archives/[^\s)>]+")
+_SLACK_PERMALINK = re.compile(r"""https://[^\s"'<>]+slack\.com/archives/[^\s"'<>]+""")
 
 
 class RepoDigestInput(pydantic.BaseModel):
