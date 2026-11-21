@@ -46,6 +46,7 @@ PR_SEARCH_FIELDS = [
 ]
 _SLACK_USER_ID = re.compile(r"^U[0-9A-Z]{8,}$")
 _SLACK_USER_ID_TEXT = re.compile(r"User ID:\s*(U[0-9A-Z]{8,})")
+_SLACK_PERMALINK = re.compile(r"https://[^\s]*slack\.com/archives/[^\s)>]+")
 
 
 class RepoDigestInput(pydantic.BaseModel):
@@ -160,6 +161,18 @@ def resolve_own_slack_user_id(payload: Any) -> str | None:
     text = payload if isinstance(payload, str) else json.dumps(payload)
     match = _SLACK_USER_ID_TEXT.search(text)
     return match.group(1) if match else None
+
+
+def extract_slack_permalink(result: Any) -> str:
+    """The send tool reports the message link in its text or structured fields."""
+    if isinstance(result, dict):
+        if result.get("permalink"):
+            return str(result["permalink"])
+        if result.get("channel") and result.get("ts"):
+            return f"{result['channel']}/{result['ts']}"
+    text = result if isinstance(result, str) else json.dumps(result)
+    match = _SLACK_PERMALINK.search(text)
+    return match.group(0) if match else "sent"
 
 
 def _md_escape(text: str) -> str:
@@ -284,12 +297,7 @@ async def post_slack_self_dm(
             arguments={"channel_id": user_id, "message": message, "unfurl_app_links": True},
         )
     )
-    if isinstance(result, dict):
-        if result.get("permalink"):
-            return str(result["permalink"])
-        if result.get("channel") and result.get("ts"):
-            return f"{result['channel']}/{result['ts']}"
-    return "sent"
+    return extract_slack_permalink(result)
 
 
 @workflows.workflow.define(

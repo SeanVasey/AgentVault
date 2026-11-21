@@ -104,6 +104,20 @@ def test_find_slack_user_id() -> None:
     assert repo_digest.find_slack_user_id({"ok": True, "profile": {"id": "nope"}}) is None
 
 
+def test_extract_slack_permalink() -> None:
+    assert repo_digest.extract_slack_permalink({"permalink": "https://x.slack.com/archives/D1/p1"}) == (
+        "https://x.slack.com/archives/D1/p1"
+    )
+    assert repo_digest.extract_slack_permalink({"channel": "D0A81ACKTE0", "ts": "1795244919.226029"}) == (
+        "D0A81ACKTE0/1795244919.226029"
+    )
+    text = {"result": "Message sent: https://vaseymultimedia.slack.com/archives/D0A81ACKTE0/p1795244919226029"}
+    assert repo_digest.extract_slack_permalink(text) == (
+        "https://vaseymultimedia.slack.com/archives/D0A81ACKTE0/p1795244919226029"
+    )
+    assert repo_digest.extract_slack_permalink({"result": "ok"}) == "sent"
+
+
 def test_resolve_own_slack_user_id_reads_text_profile_card() -> None:
     text_card = {"result": "User ID: U0A7XN48C3C\nUsername: vaseymultimedia\nDisplay Name: Sean\n"}
     assert repo_digest.resolve_own_slack_user_id(text_card) == "U0A7XN48C3C"
